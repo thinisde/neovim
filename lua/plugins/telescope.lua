@@ -25,9 +25,9 @@ local function patch_remote_sshfs_connect(extension)
 		pickers
 			.new(opts, {
 				prompt_title = "Connect to remote host",
-				finder = finders.new_table {
+				finder = finders.new_table({
 					results = host_names,
-				},
+				}),
 				sorter = sorters.get_fzy_sorter(),
 				attach_mappings = function(prompt_bufnr, _)
 					actions.select_default:replace(function()
@@ -79,7 +79,5 @@ return {
 				},
 			},
 		})
-		telescope.load_extension("remote-sshfs")
-		patch_remote_sshfs_connect(telescope.extensions["remote-sshfs"])
 	end,
 }
