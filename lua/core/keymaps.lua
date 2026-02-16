@@ -282,3 +282,10 @@ end)
 vim.keymap.set("n", "<C-b>", function()
 	require("harpoon"):list():select(4)
 end)
+
+-- Terminal
+--
+vim.keymap.set({ "n", "i", "t" }, "<C-\\>", function()
+	local count = vim.v.count1
+	vim.cmd(count .. "ToggleTerm")
+end, { silent = true, desc = "Toggle Terminal" }) --
