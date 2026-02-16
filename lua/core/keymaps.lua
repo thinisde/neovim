@@ -3,8 +3,7 @@ vim.keymap.set({ "n", "v" }, "<Space>", "<Nop>", { silent = true })
 
 local opts = { noremap = true, silent = true }
 
--- Undo files
-vim.keymap.set("i", "<C-z>", "<cmd> u <CR>", opts)
+-- Undo files vim.keymap.set("i", "<C-z>", "<cmd> u <CR>", opts)
 vim.keymap.set("n", "U", "<C-r>", opts)
 
 -- Save file
