@@ -31,11 +31,51 @@ return {
 		if has_cmp_lsp then
 			capabilities = vim.tbl_deep_extend("force", capabilities, cmp_lsp.default_capabilities())
 		end
+		local uv = vim.uv or vim.loop
+		local function clangd_include_paths()
+			local include_paths = {}
+			local seen = {}
+			local function add_include(path)
+				if not path or path == "" then
+					return
+				end
+				if not uv.fs_stat(path) or seen[path] then
+					return
+				end
+				seen[path] = true
+				table.insert(include_paths, path)
+			end
+
+			add_include("/opt/homebrew/include")
+			add_include("/usr/local/include")
+
+			if vim.fn.executable("brew") == 1 then
+				local brew_prefix = vim.fn.systemlist({ "brew", "--prefix" })
+				if vim.v.shell_error == 0 and brew_prefix[1] then
+					add_include(brew_prefix[1] .. "/include")
+				end
+				local raylib_prefix = vim.fn.systemlist({ "brew", "--prefix", "raylib" })
+				if vim.v.shell_error == 0 and raylib_prefix[1] then
+					add_include(raylib_prefix[1] .. "/include")
+				end
+			end
+
+			return include_paths
+		end
+		local clangd_include_flags = {}
+		for _, path in ipairs(clangd_include_paths()) do
+			table.insert(clangd_include_flags, "-I" .. path)
+		end
+		local clangd_cmd = { "clangd" }
+		for _, flag in ipairs(clangd_include_flags) do
+			table.insert(clangd_cmd, "--extra-arg=" .. flag)
+		end
 
 		require("fidget").setup({})
 		require("mason").setup()
 		require("mason-lspconfig").setup({
 			ensure_installed = {
+				"clangd",
 				"lua_ls",
 				"rust_analyzer",
 				"gopls",
@@ -47,6 +87,16 @@ return {
 				function(server_name) -- default handler (optional)
 					require("lspconfig")[server_name].setup({
 						capabilities = capabilities,
+					})
+				end,
+				["clangd"] = function()
+					local lspconfig = require("lspconfig")
+					lspconfig.clangd.setup({
+						capabilities = capabilities,
+						cmd = clangd_cmd,
+						init_options = {
+							fallbackFlags = clangd_include_flags,
+						},
 					})
 				end,
 

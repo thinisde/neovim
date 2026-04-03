@@ -13,10 +13,15 @@ return {
 				go = { "gofmt" },
 				javascript = { "prettier" },
 				typescript = { "prettier" },
+				elixir = { "mix" },
+				java = { "google-java-format" },
 			},
 			formatters = {
 				["clang-format"] = {
 					prepend_args = { "-style=file", "-fallback-style=LLVM" },
+				},
+				["google-java-format"] = {
+					prepend_args = { "--aosp" },
 				},
 				swiftformat = {
 					command = "swiftformat",
