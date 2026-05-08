@@ -20,9 +20,11 @@ vim.o.showmode = false
 vim.o.cmdheight = 0
 vim.o.laststatus = 0
 
-vim.g.python3_host_prog = "/Applications/Xcode.app/Contents/Developer/usr/bin/python3"
+vim.g.python3_host_prog = "/opt/homebrew/opt/python@3.14/libexec/bin/python"
 
 vim.env.PATH = vim.env.PATH .. ":/opt/homebrew/bin"
+
+vim.lsp.set_log_level("ERROR")
 
 require("lazy").setup("plugins")
 
