@@ -20,9 +20,23 @@ vim.o.showmode = false
 vim.o.cmdheight = 0
 vim.o.laststatus = 0
 
-vim.g.python3_host_prog = "/opt/homebrew/opt/python@3.14/libexec/bin/python"
+-- Ubuntu: resolve python3 from PATH (usually /usr/bin/python3).
+-- Falls back gracefully when the python3 provider binary is missing.
+local python3 = vim.fn.exepath("python3")
+if python3 ~= "" then
+	vim.g.python3_host_prog = python3
+else
+	vim.g.loaded_python3_provider = 0
+end
 
-vim.env.PATH = vim.env.PATH .. ":/opt/homebrew/bin"
+-- Ubuntu user-local install locations (pip/pipx, cargo/rustup, go).
+vim.env.PATH = table.concat({
+	vim.env.PATH,
+	vim.env.HOME .. "/.local/bin",
+	vim.env.HOME .. "/.cargo/bin",
+	vim.env.HOME .. "/go/bin",
+	"/usr/local/bin",
+}, ":")
 
 vim.lsp.log.set_level("ERROR")
 vim.g.loaded_perl_provider = 0

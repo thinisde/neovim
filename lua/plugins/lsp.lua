@@ -48,11 +48,9 @@ return {
 
 		local query_drivers = {
 			-- Raspberry Pi Pico / ARM bare-metal
-			"/opt/homebrew/bin/arm-none-eabi-*",
+			-- Ubuntu: apt install gcc-arm-none-eabi -> /usr/bin/arm-none-eabi-*
+			"/usr/bin/arm-none-eabi-*",
 			"/usr/local/bin/arm-none-eabi-*",
-
-			-- Official Arm GNU Toolchain installed through gcc-arm-embedded
-			"/Applications/ArmGNUToolchain/*/arm-none-eabi/bin/arm-none-eabi-*",
 		}
 
 		-- AVR support
@@ -159,16 +157,9 @@ return {
 			automatic_enable = true,
 		})
 
-		-- sourcekit-lsp also claims c/cpp (and matches compile_commands.json),
-		-- which makes it attach alongside clangd on bare-metal projects and
-		-- report bogus host-SDK diagnostics (e.g. 'cassert' not found).
-		-- Restrict it to Apple languages; clangd owns c/cpp.
-		vim.lsp.config("sourcekit", {
-			filetypes = { "swift", "objc", "objcpp" },
-		})
-
-		-- Explicitly enable servers (covers Mason-installed + system ones
-		-- like sourcekit from Xcode). `vim.lsp.enable` is idempotent.
+		-- Explicitly enable servers (covers Mason-installed + system ones).
+		-- `vim.lsp.enable` is idempotent. sourcekit is macOS/Xcode-only and
+		-- is intentionally not enabled on Ubuntu; clangd owns c/cpp.
 		vim.lsp.enable({
 			"clangd",
 			"lua_ls",
@@ -177,7 +168,6 @@ return {
 			"vtsls",
 			"tailwindcss",
 			"zls",
-			"sourcekit",
 		})
 
 		local ok_cmp, cmp = pcall(require, "cmp")
