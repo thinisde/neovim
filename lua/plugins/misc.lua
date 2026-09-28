@@ -7,6 +7,7 @@ return {
 	{
 		-- Hints keybinds
 		"folke/which-key.nvim",
+		dependencies = { "echasnovski/mini.icons" },
 	},
 	{
 		-- Autoclose parentheses, brackets, quotes, etc.
@@ -16,8 +17,9 @@ return {
 		opts = {},
 	},
 	{
-		-- High-performance color highlighter
-		"norcalli/nvim-colorizer.lua",
+		-- High-performance color highlighter (NvChad fork is maintained;
+		-- norcalli/ upstream uses deprecated vim.tbl_flatten)
+		"NvChad/nvim-colorizer.lua",
 		config = function()
 			require("colorizer").setup()
 		end,

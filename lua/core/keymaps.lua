@@ -43,14 +43,17 @@ vim.keymap.set("v", ">", ">gv", opts)
 -- Keep last yanked when pasting
 vim.keymap.set("v", "p", '"_dP', opts)
 
--- Diagnostic keymaps
-vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, { desc = "Go to previous diagnostic message" })
-vim.keymap.set("n", "]d", vim.diagnostic.goto_next, { desc = "Go to next diagnostic message" })
+-- Diagnostic keymaps (vim.diagnostic.goto_prev/next removed in Nvim 0.13; use jump)
+vim.keymap.set("n", "[d", function()
+	vim.diagnostic.jump({ count = -1, float = true })
+end, { desc = "Go to previous diagnostic message" })
+vim.keymap.set("n", "]d", function()
+	vim.diagnostic.jump({ count = 1, float = true })
+end, { desc = "Go to next diagnostic message" })
 vim.keymap.set("n", "<leader>d", vim.diagnostic.open_float, { desc = "Open floating diagnostic message" })
 vim.keymap.set("n", "<leader>q", vim.diagnostic.setloclist, { desc = "Open diagnostics list" })
 
--- VimTeX group for which-key
-vim.keymap.set("n", "<localleader>l", "<Nop>", { silent = true, desc = "+vimtex" })
+
 
 -- LSP buffer-local keymaps
 vim.api.nvim_create_autocmd("LspAttach", {
@@ -88,31 +91,14 @@ vim.api.nvim_create_autocmd("LspAttach", {
 		end, opts)
 
 		local client = vim.lsp.get_client_by_id(event.data.client_id)
-		if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint) then
+		if client and client:supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint) then
 			map("<leader>th", function()
-				vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled({ bufnr = event.buf }))
+				local bufnr = event.buf
+				vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled({ bufnr = bufnr }), { bufnr = bufnr })
 			end, "[T]oggle Inlay [H]ints")
 		end
 	end,
 })
-
--------------------------------------------------------------------------------
--- Xcodebuild Keymaps
--------------------------------------------------------------------------------
-
-vim.keymap.set("n", "<leader>xr", "<cmd>XcodebuildBuildRun<cr>", opts)
-vim.keymap.set("n", "<leader>xl", "<cmd>XcodebuildToggleLogs<cr>", opts)
-vim.keymap.set("n", "<leader>xd", "<cmd>XcodebuildSelectDevice<cr>", opts)
-vim.keymap.set("n", "<leader>xq", function()
-	local ok, telescope_builtin = pcall(require, "telescope.builtin")
-	if ok then
-		telescope_builtin.quickfix()
-		return
-	end
-	vim.cmd("copen")
-end, opts)
-vim.keymap.set("n", "<leader>xx", "<cmd>XcodebuildQuickfixLine<cr>", opts)
-vim.keymap.set("n", "<leader>xa", "<cmd>XcodebuildCodeActions<cr>", opts)
 
 -------------------------------------------------------------------------------
 -- Telescope Keymaps

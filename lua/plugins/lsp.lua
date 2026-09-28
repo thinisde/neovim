@@ -2,8 +2,8 @@ return {
 	"neovim/nvim-lspconfig",
 	dependencies = {
 		"stevearc/conform.nvim",
-		"williamboman/mason.nvim",
-		"williamboman/mason-lspconfig.nvim",
+		"mason-org/mason.nvim",
+		"mason-org/mason-lspconfig.nvim",
 		"hrsh7th/cmp-nvim-lsp",
 		"hrsh7th/cmp-buffer",
 		"hrsh7th/cmp-path",
@@ -31,48 +31,120 @@ return {
 		if has_cmp_lsp then
 			capabilities = vim.tbl_deep_extend("force", capabilities, cmp_lsp.default_capabilities())
 		end
-		local uv = vim.uv or vim.loop
-		local function clangd_include_paths()
-			local include_paths = {}
-			local seen = {}
-			local function add_include(path)
-				if not path or path == "" then
-					return
-				end
-				if not uv.fs_stat(path) or seen[path] then
-					return
-				end
-				seen[path] = true
-				table.insert(include_paths, path)
-			end
 
-			add_include("/opt/homebrew/include")
-			add_include("/usr/local/include")
+		-- Default capabilities for all servers (new vim.lsp.config API).
+		-- This merges with the defaults shipped in nvim-lspconfig/lsp/*.lua.
+		vim.lsp.config("*", {
+			capabilities = capabilities,
+		})
 
-			if vim.fn.executable("brew") == 1 then
-				local brew_prefix = vim.fn.systemlist({ "brew", "--prefix" })
-				if vim.v.shell_error == 0 and brew_prefix[1] then
-					add_include(brew_prefix[1] .. "/include")
-				end
-				local raylib_prefix = vim.fn.systemlist({ "brew", "--prefix", "raylib" })
-				if vim.v.shell_error == 0 and raylib_prefix[1] then
-					add_include(raylib_prefix[1] .. "/include")
-				end
-			end
+		local clangd_cmd = {
+			"clangd",
+			"--background-index",
+			"--clang-tidy",
+			"--completion-style=detailed",
+			"--header-insertion=never",
+		}
 
-			return include_paths
-		end
-		local clangd_include_flags = {}
-		for _, path in ipairs(clangd_include_paths()) do
-			table.insert(clangd_include_flags, "-I" .. path)
-		end
-		local clangd_cmd = { "clangd" }
-		for _, flag in ipairs(clangd_include_flags) do
-			table.insert(clangd_cmd, "--extra-arg=" .. flag)
+		local query_drivers = {
+			-- Raspberry Pi Pico / ARM bare-metal
+			"/opt/homebrew/bin/arm-none-eabi-*",
+			"/usr/local/bin/arm-none-eabi-*",
+
+			-- Official Arm GNU Toolchain installed through gcc-arm-embedded
+			"/Applications/ArmGNUToolchain/*/arm-none-eabi/bin/arm-none-eabi-*",
+		}
+
+		-- AVR support
+		local avr_gcc = vim.fn.exepath("avr-gcc")
+		local avr_gxx = vim.fn.exepath("avr-g++")
+
+		if avr_gcc ~= "" then
+			table.insert(query_drivers, avr_gcc)
 		end
 
-		require("fidget").setup({})
+		if avr_gxx ~= "" then
+			table.insert(query_drivers, avr_gxx)
+		end
+
+		table.insert(clangd_cmd, "--query-driver=" .. table.concat(query_drivers, ","))
+
+		require("fidget").setup({
+			notification = {
+				window = {
+					-- Silence checkhealth warning about implicit xcodebuild.nvim integration.
+					avoid = { "TestExplorer" },
+				},
+			},
+		})
 		require("mason").setup()
+
+		-- Per-server overrides via the new vim.lsp.config API.
+		-- These merge with nvim-lspconfig defaults; mason-lspconfig then
+		-- auto-enables the installed servers with vim.lsp.enable().
+		vim.lsp.config("clangd", {
+			cmd = clangd_cmd,
+			capabilities = vim.tbl_deep_extend("force", capabilities, {
+				general = {
+					positionEncodings = { "utf-8", "utf-16" },
+				},
+			}),
+		})
+
+		vim.lsp.config("zls", {
+			root_markers = { ".git", "build.zig", "zls.json" },
+			settings = {
+				zls = {
+					enable_inlay_hints = true,
+					enable_snippets = true,
+					warn_style = true,
+				},
+			},
+		})
+		vim.g.zig_fmt_parse_errors = 0
+		vim.g.zig_fmt_autosave = 0
+
+		vim.lsp.config("lua_ls", {
+			settings = {
+				Lua = {
+					runtime = {
+						version = "LuaJIT",
+					},
+					diagnostics = {
+						globals = { "vim" },
+					},
+					workspace = {
+						library = vim.api.nvim_get_runtime_file("", true),
+						checkThirdParty = false,
+					},
+					format = {
+						enable = true,
+						-- Put format options here
+						-- NOTE: the value should be STRING!!
+						defaultConfig = {
+							indent_style = "space",
+							indent_size = "4",
+						},
+					},
+				},
+			},
+		})
+
+		vim.lsp.config("tailwindcss", {
+			filetypes = {
+				"html",
+				"css",
+				"scss",
+				"javascript",
+				"javascriptreact",
+				"typescript",
+				"typescriptreact",
+				"vue",
+				"svelte",
+				"heex",
+			},
+		})
+
 		require("mason-lspconfig").setup({
 			ensure_installed = {
 				"clangd",
@@ -81,89 +153,31 @@ return {
 				"gopls",
 				"vtsls",
 				"tailwindcss",
-				"sourcekit",
 			},
-			handlers = {
-				function(server_name) -- default handler (optional)
-					require("lspconfig")[server_name].setup({
-						capabilities = capabilities,
-					})
-				end,
-				["clangd"] = function()
-					local lspconfig = require("lspconfig")
-					lspconfig.clangd.setup({
-						capabilities = capabilities,
-						cmd = clangd_cmd,
-						init_options = {
-							fallbackFlags = clangd_include_flags,
-						},
-					})
-				end,
+			-- New v2 API: no `handlers` table. Servers installed via Mason
+			-- are automatically enabled with vim.lsp.enable().
+			automatic_enable = true,
+		})
 
-				zls = function()
-					local lspconfig = require("lspconfig")
-					lspconfig.zls.setup({
-						root_dir = lspconfig.util.root_pattern(".git", "build.zig", "zls.json"),
-						settings = {
-							zls = {
-								enable_inlay_hints = true,
-								enable_snippets = true,
-								warn_style = true,
-							},
-						},
-					})
-					vim.g.zig_fmt_parse_errors = 0
-					vim.g.zig_fmt_autosave = 0
-				end,
-				["lua_ls"] = function()
-					local lspconfig = require("lspconfig")
+		-- sourcekit-lsp also claims c/cpp (and matches compile_commands.json),
+		-- which makes it attach alongside clangd on bare-metal projects and
+		-- report bogus host-SDK diagnostics (e.g. 'cassert' not found).
+		-- Restrict it to Apple languages; clangd owns c/cpp.
+		vim.lsp.config("sourcekit", {
+			filetypes = { "swift", "objc", "objcpp" },
+		})
 
-					lspconfig.lua_ls.setup({
-						capabilities = capabilities,
-						settings = {
-							Lua = {
-								runtime = {
-									version = "LuaJIT",
-								},
-								diagnostics = {
-									globals = { "vim" },
-								},
-								workspace = {
-									library = vim.api.nvim_get_runtime_file("", true),
-									checkThirdParty = false,
-								},
-								format = {
-									enable = true,
-									-- Put format options here
-									-- NOTE: the value should be STRING!!
-									defaultConfig = {
-										indent_style = "space",
-										indent_size = "4",
-									},
-								},
-							},
-						},
-					})
-				end,
-				["tailwindcss"] = function()
-					local lspconfig = require("lspconfig")
-					lspconfig.tailwindcss.setup({
-						capabilities = capabilities,
-						filetypes = {
-							"html",
-							"css",
-							"scss",
-							"javascript",
-							"javascriptreact",
-							"typescript",
-							"typescriptreact",
-							"vue",
-							"svelte",
-							"heex",
-						},
-					})
-				end,
-			},
+		-- Explicitly enable servers (covers Mason-installed + system ones
+		-- like sourcekit from Xcode). `vim.lsp.enable` is idempotent.
+		vim.lsp.enable({
+			"clangd",
+			"lua_ls",
+			"rust_analyzer",
+			"gopls",
+			"vtsls",
+			"tailwindcss",
+			"zls",
+			"sourcekit",
 		})
 
 		local ok_cmp, cmp = pcall(require, "cmp")

@@ -24,7 +24,9 @@ vim.g.python3_host_prog = "/opt/homebrew/opt/python@3.14/libexec/bin/python"
 
 vim.env.PATH = vim.env.PATH .. ":/opt/homebrew/bin"
 
-vim.lsp.set_log_level("ERROR")
+vim.lsp.log.set_level("ERROR")
+vim.g.loaded_perl_provider = 0
+vim.g.loaded_ruby_provider = 0
 
 require("lazy").setup("plugins")
 
