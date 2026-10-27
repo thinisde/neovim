@@ -1,7 +1,6 @@
 return {
 	"neovim/nvim-lspconfig",
 	dependencies = {
-		"stevearc/conform.nvim",
 		"mason-org/mason.nvim",
 		"mason-org/mason-lspconfig.nvim",
 		"hrsh7th/cmp-nvim-lsp",
@@ -15,13 +14,6 @@ return {
 	},
 
 	config = function()
-		local ok_conform, conform = pcall(require, "conform")
-		if ok_conform then
-			conform.setup({
-				formatters_by_ft = {},
-			})
-		end
-
 		local capabilities = vim.lsp.protocol.make_client_capabilities()
 		local has_cmp_lsp, cmp_lsp = pcall(require, "cmp_nvim_lsp")
 		if not has_cmp_lsp then
@@ -47,10 +39,11 @@ return {
 		}
 
 		local query_drivers = {
-			-- Raspberry Pi Pico / ARM bare-metal
-			-- Ubuntu: apt install gcc-arm-none-eabi -> /usr/bin/arm-none-eabi-*
-			"/usr/bin/arm-none-eabi-*",
+			-- Homebrew ARM toolchains on Apple Silicon and Intel Macs.
+			"/opt/homebrew/bin/arm-none-eabi-*",
 			"/usr/local/bin/arm-none-eabi-*",
+			-- Official Arm GNU Toolchain installed through gcc-arm-embedded.
+			"/Applications/ArmGNUToolchain/*/arm-none-eabi/bin/arm-none-eabi-*",
 		}
 
 		-- AVR support
@@ -77,9 +70,7 @@ return {
 		})
 		require("mason").setup()
 
-		-- Per-server overrides via the new vim.lsp.config API.
-		-- These merge with nvim-lspconfig defaults; mason-lspconfig then
-		-- auto-enables the installed servers with vim.lsp.enable().
+		-- clangd owns C/C++/Objective-C, including embedded ARM and AVR projects.
 		vim.lsp.config("clangd", {
 			cmd = clangd_cmd,
 			capabilities = vim.tbl_deep_extend("force", capabilities, {
@@ -143,6 +134,11 @@ return {
 			},
 		})
 
+		vim.lsp.config("sourcekit", {
+			cmd = { "xcrun", "sourcekit-lsp" },
+			filetypes = { "swift" },
+		})
+
 		require("mason-lspconfig").setup({
 			ensure_installed = {
 				"clangd",
@@ -152,16 +148,14 @@ return {
 				"vtsls",
 				"tailwindcss",
 			},
-			-- New v2 API: no `handlers` table. Servers installed via Mason
-			-- are automatically enabled with vim.lsp.enable().
-			automatic_enable = true,
+			-- Enable the selected servers explicitly below.
+			automatic_enable = false,
 		})
 
-		-- Explicitly enable servers (covers Mason-installed + system ones).
-		-- `vim.lsp.enable` is idempotent. sourcekit is macOS/Xcode-only and
-		-- is intentionally not enabled on Ubuntu; clangd owns c/cpp.
+		-- Mason supplies clangd and the other servers; Xcode supplies SourceKit.
 		vim.lsp.enable({
 			"clangd",
+			"sourcekit",
 			"lua_ls",
 			"rust_analyzer",
 			"gopls",

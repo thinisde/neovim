@@ -20,25 +20,25 @@ vim.o.showmode = false
 vim.o.cmdheight = 0
 vim.o.laststatus = 0
 
--- Ubuntu: resolve python3 from PATH (usually /usr/bin/python3).
--- Falls back gracefully when the python3 provider binary is missing.
+-- Homebrew and user-installed tools, including GUI-launched Neovim sessions.
+vim.env.PATH = table.concat({
+	"/opt/homebrew/bin",
+	"/opt/homebrew/sbin",
+	"/usr/local/bin",
+	"/usr/local/sbin",
+	vim.env.HOME .. "/.local/bin",
+	vim.env.HOME .. "/.cargo/bin",
+	vim.env.HOME .. "/go/bin",
+	vim.env.PATH or "",
+}, ":")
+
+-- Resolve Python after Homebrew has been added to PATH.
 local python3 = vim.fn.exepath("python3")
 if python3 ~= "" then
 	vim.g.python3_host_prog = python3
 else
 	vim.g.loaded_python3_provider = 0
 end
-
--- Ubuntu user-local install locations (pip/pipx, cargo/rustup, go).
--- /opt/homebrew/bin: Homebrew tools (mmixal/mmix, …) for GUI-launched nvim.
-vim.env.PATH = table.concat({
-	vim.env.PATH,
-	vim.env.HOME .. "/.local/bin",
-	vim.env.HOME .. "/.cargo/bin",
-	vim.env.HOME .. "/go/bin",
-	"/usr/local/bin",
-	"/opt/homebrew/bin",
-}, ":")
 
 vim.lsp.log.set_level("ERROR")
 vim.g.loaded_perl_provider = 0

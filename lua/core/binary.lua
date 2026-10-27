@@ -34,7 +34,7 @@ local object_magic = {
 	["\191\186\254\202"] = true,
 }
 
-local function detect(path)
+local function read_sample(path)
 	local stat = uv.fs_stat(path)
 	if not stat or stat.type ~= "file" then
 		return
@@ -45,6 +45,14 @@ local function detect(path)
 	end
 	local sample = uv.fs_read(fd, math.min(stat.size, 8192), 0) or ""
 	uv.fs_close(fd)
+	return sample
+end
+
+local function detect(path)
+	local sample = read_sample(path)
+	if not sample then
+		return
+	end
 	if
 		object_magic[sample:sub(1, 4)]
 		or (sample:sub(1, 2) == "MZ" and sample:find("\0", 1, true))
@@ -65,12 +73,27 @@ local function command_for(mode, path)
 		end
 		return nil, "HexView requires xxd on PATH"
 	end
+	local include_headers = mode == "assembly_headers"
+	local magic = include_headers and (read_sample(path) or ""):sub(1, 4) or ""
+	local macho = object_magic[magic] and magic ~= "\127ELF"
 	for _, executable in ipairs({ "llvm-objdump", "objdump" }) do
 		if vim.fn.executable(executable) == 1 then
-			return { executable, "-d", "--demangle", path }
+			local command = { executable, "-d", "--demangle" }
+			if include_headers then
+				if macho then
+					vim.list_extend(command, { "--macho", "--private-headers", "--section-headers" })
+				else
+					table.insert(command, "--all-headers")
+				end
+			end
+			table.insert(command, path)
+			return command
 		end
 	end
 	if vim.fn.executable("otool") == 1 then
+		if include_headers then
+			return { "otool", "-h", "-l", "-t", "-v", "-V", path }
+		end
 		return { "otool", "-tvV", path }
 	end
 	return nil, "AssemblyView requires llvm-objdump, objdump, or otool on PATH"
@@ -212,6 +235,9 @@ function M.setup()
 	vim.api.nvim_create_user_command("AssemblyView", function()
 		M.view(vim.api.nvim_get_current_buf(), "assembly", false)
 	end, { desc = "Disassemble the current binary file" })
+	vim.api.nvim_create_user_command("AssemblyViewIncludeHeader", function()
+		M.view(vim.api.nvim_get_current_buf(), "assembly_headers", false)
+	end, { desc = "Show binary headers and disassembly for the current file" })
 end
 
 return M

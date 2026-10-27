@@ -1,12 +1,3 @@
-vim.api.nvim_create_autocmd("BufWritePre", {
-	callback = function(args)
-		if vim.bo[args.buf].buftype ~= "" or vim.bo[args.buf].filetype == "oil" then
-			return
-		end
-		require("conform").format({ bufnr = args.buf, lsp_fallback = true, timeout_ms = 2000 })
-	end,
-})
-
 vim.api.nvim_create_autocmd("TermEnter", {
 	pattern = "term://*toggleterm#*",
 	callback = function()
