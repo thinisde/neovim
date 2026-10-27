@@ -31,7 +31,7 @@ return {
 				},
 			},
 			format_on_save = function(bufnr)
-				if vim.bo[bufnr].filetype == "oil" then
+				if vim.bo[bufnr].buftype ~= "" or vim.bo[bufnr].filetype == "oil" then
 					return
 				end
 				return { timeout_ms = 500, lsp_fallback = true }

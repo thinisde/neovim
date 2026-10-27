@@ -30,17 +30,22 @@ else
 end
 
 -- Ubuntu user-local install locations (pip/pipx, cargo/rustup, go).
+-- /opt/homebrew/bin: Homebrew tools (mmixal/mmix, …) for GUI-launched nvim.
 vim.env.PATH = table.concat({
 	vim.env.PATH,
 	vim.env.HOME .. "/.local/bin",
 	vim.env.HOME .. "/.cargo/bin",
 	vim.env.HOME .. "/go/bin",
 	"/usr/local/bin",
+	"/opt/homebrew/bin",
 }, ":")
 
 vim.lsp.log.set_level("ERROR")
 vim.g.loaded_perl_provider = 0
 vim.g.loaded_ruby_provider = 0
+
+-- Open compiled binaries as assembly and other binary data as hex.
+require("core.binary").setup()
 
 require("lazy").setup("plugins")
 
