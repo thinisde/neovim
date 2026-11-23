@@ -15,13 +15,6 @@ return {
 	},
 
 	config = function()
-		local ok_conform, conform = pcall(require, "conform")
-		if ok_conform then
-			conform.setup({
-				formatters_by_ft = {},
-			})
-		end
-
 		local capabilities = vim.lsp.protocol.make_client_capabilities()
 		local has_cmp_lsp, cmp_lsp = pcall(require, "cmp_nvim_lsp")
 		if not has_cmp_lsp then
@@ -67,14 +60,7 @@ return {
 
 		table.insert(clangd_cmd, "--query-driver=" .. table.concat(query_drivers, ","))
 
-		require("fidget").setup({
-			notification = {
-				window = {
-					-- Silence checkhealth warning about implicit xcodebuild.nvim integration.
-					avoid = { "TestExplorer" },
-				},
-			},
-		})
+		require("fidget").setup()
 		require("mason").setup()
 
 		-- Per-server overrides via the new vim.lsp.config API.
@@ -139,7 +125,6 @@ return {
 				"typescriptreact",
 				"vue",
 				"svelte",
-				"heex",
 			},
 		})
 
@@ -151,6 +136,7 @@ return {
 				"gopls",
 				"vtsls",
 				"tailwindcss",
+				"zls",
 			},
 			-- New v2 API: no `handlers` table. Servers installed via Mason
 			-- are automatically enabled with vim.lsp.enable().
@@ -158,8 +144,7 @@ return {
 		})
 
 		-- Explicitly enable servers (covers Mason-installed + system ones).
-		-- `vim.lsp.enable` is idempotent. sourcekit is macOS/Xcode-only and
-		-- is intentionally not enabled on Ubuntu; clangd owns c/cpp.
+		-- `vim.lsp.enable` is idempotent; clangd owns c/cpp.
 		vim.lsp.enable({
 			"clangd",
 			"lua_ls",

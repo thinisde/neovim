@@ -6,14 +6,12 @@ return {
 
 		conform.setup({
 			formatters_by_ft = {
-				swift = { "swiftformat" },
 				c = { "clang-format" },
 				cpp = { "clang-format" },
 				lua = { "stylua" },
 				go = { "gofmt" },
 				javascript = { "prettier" },
 				typescript = { "prettier" },
-				elixir = { "mix" },
 				java = { "google-java-format" },
 			},
 			formatters = {
@@ -22,12 +20,6 @@ return {
 				},
 				["google-java-format"] = {
 					prepend_args = { "--aosp" },
-				},
-				swiftformat = {
-					command = "swiftformat",
-					-- SwiftFormat expects --stdinpath only when reading from stdin
-					args = { "--quiet", "--stdinpath", "$FILENAME" },
-					stdin = true,
 				},
 			},
 			format_on_save = function(bufnr)

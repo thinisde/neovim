@@ -70,10 +70,7 @@ local function command_for(mode, path)
 			return { executable, "-d", "--demangle", path }
 		end
 	end
-	if vim.fn.executable("otool") == 1 then
-		return { "otool", "-tvV", path }
-	end
-	return nil, "AssemblyView requires llvm-objdump, objdump, or otool on PATH"
+	return nil, "AssemblyView requires llvm-objdump or objdump on PATH"
 end
 
 local function render(buf, mode, output)

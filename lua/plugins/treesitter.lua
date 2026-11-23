@@ -10,10 +10,9 @@ return {
 				install_dir = vim.fn.stdpath("data") .. "/site",
 			})
 
-			treesitter.install({ "elixir", "heex", "eex", "svelte" })
+			treesitter.install({ "svelte" })
 
 			vim.treesitter.language.register("templ", "templ")
-			vim.treesitter.language.register("eex", "eelixir")
 		end,
 	},
 

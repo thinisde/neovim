@@ -19,33 +19,6 @@ return {
 			return vim.fn.winwidth(0) > 100
 		end
 
-		local function xcodebuild_device()
-			local platform = vim.g.xcodebuild_platform
-			if not platform then
-				return ""
-			end
-
-			if platform == "macOS" then
-				return " macOS"
-			end
-
-			local deviceIcon = ""
-			if platform:match("watch") then
-				deviceIcon = "􀟤"
-			elseif platform:match("tv") then
-				deviceIcon = "􀡴 "
-			elseif platform:match("vision") then
-				deviceIcon = "􁎖 "
-			end
-
-			local device_name = vim.g.xcodebuild_device_name or ""
-			if vim.g.xcodebuild_os then
-				return deviceIcon .. " " .. device_name .. " (" .. vim.g.xcodebuild_os .. ")"
-			end
-
-			return deviceIcon .. " " .. device_name
-		end
-
 		local diagnostics = {
 			"diagnostics",
 			sources = { "nvim_diagnostic" },
@@ -81,11 +54,7 @@ return {
 				lualine_b = { "branch" },
 				lualine_c = { filename },
 				lualine_y = { "location" },
-				lualine_x = {
-					{ "' ' .. vim.g.xcodebuild_last_status", color = { fg = "Gray" } },
-					{ "'󰙨 ' .. vim.g.xcodebuild_test_plan", color = { fg = "#a6e3a1", bg = "#161622" } },
-					{ xcodebuild_device, color = { fg = "#f9e2af", bg = "#161622" } },
-				},
+				lualine_x = {},
 				lualine_z = { "progress" },
 			},
 			inactive_sections = {

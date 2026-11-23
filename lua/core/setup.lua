@@ -1,11 +1,6 @@
-vim.api.nvim_create_autocmd("BufWritePre", {
-	callback = function(args)
-		if vim.bo[args.buf].buftype ~= "" or vim.bo[args.buf].filetype == "oil" then
-			return
-		end
-		require("conform").format({ bufnr = args.buf, lsp_fallback = true, timeout_ms = 2000 })
-	end,
-})
+-- Formatting on save is handled by conform.nvim's `format_on_save`
+-- (see lua/plugins/conform.lua). A second BufWritePre autocmd here would
+-- format every buffer twice on each write.
 
 vim.api.nvim_create_autocmd("TermEnter", {
 	pattern = "term://*toggleterm#*",
